@@ -100,27 +100,13 @@ public class LeaderboardResetBackgroundService : BackgroundService
         try
         {
             // Placeholder for notification logic
-            // Could include:
-            // - Sending webhooks to external systems
-            // - Publishing events to message queues
-            // - Updating application metrics
-            // - Sending notifications to administrators
-            
             _logger.LogDebug("Leaderboard reset notification sent for {PlayersAffected} players", playersAffected);
             
-            // Example: Log an event that monitoring systems can pick up
-            using var scope = _serviceProvider.CreateScope();
-            var logger = scope.ServiceProvider.GetService<ILogger<LeaderboardResetBackgroundService>>();
-            
-            logger?.LogInformation("LEADERBOARD_RESET_COMPLETED: {PlayersAffected} players reset at {Timestamp}", 
-                playersAffected, DateTimeOffset.UtcNow);
-                
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send reset completion notification");
-            // Don't throw - notifications are optional
         }
     }
 
@@ -135,21 +121,13 @@ public class LeaderboardResetBackgroundService : BackgroundService
         try
         {
             // Placeholder for alert logic
-            // Could include:
-            // - Sending alerts to monitoring systems
-            // - Creating incidents in incident management systems
-            // - Sending notifications to on-call engineers
-            // - Publishing to error tracking systems
-            
-            _logger.LogError("LEADERBOARD_RESET_FAILED: {ErrorMessage} at {Timestamp}", 
-                errorMessage, DateTimeOffset.UtcNow);
+            _logger.LogError("LEADERBOARD_RESET_FAILED: {ErrorMessage} at {Timestamp}", errorMessage, DateTimeOffset.UtcNow);
                 
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send reset failure notification");
-            // Don't throw - notifications are optional
         }
     }
 

@@ -130,27 +130,7 @@ public class RedisLeaderboardService : IRedisLeaderboardService
             if (!await IsAvailableAsync(cancellationToken) || count <= 0)
                 return Array.Empty<LeaderboardEntry>();
 
-            // Get top players in descending order by score
-            var topPlayers = await _database.SortedSetRangeByRankWithScoresAsync(
-                LeaderboardKey,
-                start: 0,
-                stop: count - 1,
-                order: Order.Descending);
-
-            var result = new List<LeaderboardEntry>();
-
-            for (int i = 0; i < topPlayers.Length; i++)
-            {
-                if (Guid.TryParse(topPlayers[i].Element, out var playerId))
-                {
-                    result.Add(new LeaderboardEntry
-                    {
-                        PlayerId = playerId,
-                        Score = (long)topPlayers[i].Score,
-                        Rank = i + 1 // 1-based ranking
-                    });
-                }
-            }
+            var result = await GetPlayerInRankRangeAsync(0, count - 1);
 
             _logger.LogDebug("Retrieved {Count} top players from Redis leaderboard", result.Count);
             return result;
@@ -181,27 +161,7 @@ public class RedisLeaderboardService : IRedisLeaderboardService
             var startRank = Math.Max(0, playerRank.Value - range);
             var endRank = playerRank.Value + range;
 
-            // Get players in the range
-            var nearbyPlayers = await _database.SortedSetRangeByRankWithScoresAsync(
-                LeaderboardKey,
-                start: startRank,
-                stop: endRank,
-                order: Order.Descending);
-
-            var result = new List<LeaderboardEntry>();
-
-            for (int i = 0; i < nearbyPlayers.Length; i++)
-            {
-                if (Guid.TryParse(nearbyPlayers[i].Element, out var nearbyPlayerId))
-                {
-                    result.Add(new LeaderboardEntry
-                    {
-                        PlayerId = nearbyPlayerId,
-                        Score = (long)nearbyPlayers[i].Score,
-                        Rank = (int)(startRank + i + 1) // 1-based ranking
-                    });
-                }
-            }
+            var result = await GetPlayerInRankRangeAsync(startRank, endRank);
 
             _logger.LogDebug("Retrieved {Count} nearby players for player {PlayerId} from Redis leaderboard", result.Count, playerId);
             return result;
@@ -213,31 +173,31 @@ public class RedisLeaderboardService : IRedisLeaderboardService
         }
     }
 
-    /// <inheritdoc />
-    public async Task<bool> RemovePlayerAsync(Guid playerId, CancellationToken cancellationToken = default)
+    private async Task<IReadOnlyList<LeaderboardEntry>> GetPlayerInRankRangeAsync(long startRank, long endRank)
     {
-        try
+        // Get players in the range
+        var nearbyPlayers = await _database.SortedSetRangeByRankWithScoresAsync(
+            LeaderboardKey,
+            start: startRank,
+            stop: endRank,
+            order: Order.Descending);
+
+        var result = new List<LeaderboardEntry>();
+
+        for (int i = 0; i < nearbyPlayers.Length; i++)
         {
-            if (!await IsAvailableAsync(cancellationToken))
-                return false;
-
-            var playerIdString = playerId.ToString();
-
-            var batch = _database.CreateBatch();
-            var removeFromLeaderboardTask = batch.SortedSetRemoveAsync(LeaderboardKey, playerIdString);
-            var removeMetadataTask = batch.HashDeleteAsync(PlayerDataKey, playerIdString);
-
-            batch.Execute();
-            await Task.WhenAll(removeFromLeaderboardTask, removeMetadataTask);
-
-            _logger.LogDebug("Removed player {PlayerId} from Redis leaderboard", playerId);
-            return true;
+            if (Guid.TryParse(nearbyPlayers[i].Element, out var nearbyPlayerId))
+            {
+                result.Add(new LeaderboardEntry
+                {
+                    PlayerId = nearbyPlayerId,
+                    Score = (long)nearbyPlayers[i].Score,
+                    Rank = (int)(startRank + i + 1) // 1-based ranking
+                });
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to remove player {PlayerId} from Redis leaderboard", playerId);
-            return false;
-        }
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -282,23 +242,6 @@ public class RedisLeaderboardService : IRedisLeaderboardService
         {
             _logger.LogDebug(ex, "Redis availability check failed");
             return false;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task<long> GetTotalPlayerCountAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (!await IsAvailableAsync(cancellationToken))
-                return 0;
-
-            return await _database.SortedSetLengthAsync(LeaderboardKey);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to get total player count from Redis leaderboard");
-            return 0;
         }
     }
 
