@@ -3,7 +3,28 @@
 ## Context
 ### Technical context
 
-
+```mermaid
+graph TD
+    subgraph "APPLICATION LAYER"
+        B1[Leaderboard API]
+    end
+    
+    subgraph "DATA LAYER"
+        C1[PostgreSQL <br/>Source of truth]
+        C2[Redis<br/>Leaderboard ranks]
+    end
+    
+    B1 --> C1
+    B1 --> C2
+    
+    classDef app fill:#e74c3c,stroke:#c0392b,color:#fff
+    classDef db fill:#27ae60,stroke:#229954,color:#fff
+    classDef cache fill:#e67e22,stroke:#d68910,color:#fff
+    
+    class B1 app
+    class C1 db
+    class C2 cache
+```
 
 ## Decision records
 - [Leaderboard data storage](./adr/ADR-001-Storage.md)
