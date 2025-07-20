@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: leaderboard_postgres
+    environment:
+      POSTGRES_DB: leaderboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - leaderboard_network
+
+  # http://localhost:8080/?pgsql=leaderboard_postgres&username=postgres
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    networks:
+      - leaderboard_network
+
+  redis:
+    image: redis:7
+    container_name: leaderboard_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - leaderboard_network
+
+  # http://localhost:5540/
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - '5540:5540'
+    volumes:
+      - redisinsight_data:/db
+    depends_on:
+      - redis
+    networks:
+      - leaderboard_network
+
+  # http://localhost:5108/
+  leaderboard-api:
+    build: 
+      context: .
+      dockerfile: src/PS.LeaderboardAPI/Dockerfile
+    container_name: leaderboard_api
+    ports:
+      - "5108:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=leaderboard;Username=postgres;Password=dev_password
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - leaderboard_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  redisinsight_data:
+
+networks:
+  leaderboard_network:
+    driver: bridge
