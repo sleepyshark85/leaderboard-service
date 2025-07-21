@@ -13,15 +13,16 @@ public class LeaderboardConfiguration
     public string ResetTimeZone { get; set; } = "UTC";
 
     public int ResetHour { get; set; } = 0;
+    public int CacheWarmupBatchSize { get; set; } = 1000;
 
     public DateTimeOffset GetNextResetTime()
     {
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(ResetTimeZone);
         var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone);
-        
+
         var resetTime = new DateTimeOffset(
-            now.Year, now.Month, now.Day, 
-            ResetHour, 0, 0, 
+            now.Year, now.Month, now.Day,
+            ResetHour, 0, 0,
             timeZone.GetUtcOffset(now.DateTime));
 
         if (resetTime <= now)

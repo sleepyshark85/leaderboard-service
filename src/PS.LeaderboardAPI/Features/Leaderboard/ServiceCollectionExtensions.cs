@@ -53,14 +53,13 @@ public static class ServiceCollectionExtensions
             }
             
             // Get players from database, by batch
-            var count = 1000;
             var page = 1;
             IEnumerable<Player>? retrieved;
             var cacheCount = 0;
 
             do
             {
-                retrieved = await playerRepository.GetRangeAsync(count, page);
+                retrieved = await playerRepository.GetRangeAsync(configuration.CacheWarmupBatchSize, page);
                 if (retrieved is not null)
                 {
                     var playerData = retrieved.Select(p => (p.Id, p.CurrentScore)).ToList();
@@ -69,8 +68,8 @@ public static class ServiceCollectionExtensions
                         cacheCount += playerData.Count();
                 }
             }
-            //Simple loop condition
-            while (retrieved is not null && retrieved.Count() == count);
+            //Simple loop condition, we may need to have an extra roundtrip without any data. But anyway ...
+            while (retrieved is not null && retrieved.Count() == configuration.CacheWarmupBatchSize);
             
             logger?.LogInformation("Successfully warmed up Redis cache with {Count} players", cacheCount);
         }
