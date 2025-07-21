@@ -1,5 +1,15 @@
 
 
+## Introduction
+This document shows 
+- System design diagram
+- Important decision records
+- Important runtime views
+
+The architecture is chosen to balance the given timeframe (8-12 hours) with the complexity needed for the system to serve a high number of players. To ensure the system can serve more players without compromising performance or availability, we would need additional components and code:
+- An additional Redis instance to provide more fine-grained data
+- A message queue to handle a high volume of write requests
+
 ## Context
 ### Technical context
 

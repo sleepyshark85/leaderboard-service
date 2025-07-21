@@ -20,6 +20,5 @@ Need real-time leaderboard for millions of players with sub-millisecond response
 - ✅ Sub-millisecond performance even with dramatic rank changes
 - ✅ Scales to 100M+ players with complex scoring
 - ✅ Automatic rank recalculation in O(log N) time
-- ✅ 68% cost savings vs alternatives
 - ❌ Dual-store complexity
 - ❌ Ranking complexity must be pre-computed into single score
